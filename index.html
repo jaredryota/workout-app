@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="筋トレログ">
+<meta name="theme-color" content="#111111">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
+<title>筋トレログ</title>
+<style>
+:root{
+  --bg:#111;--bg2:#1c1c1e;--bg3:#2c2c2e;
+  --bdr:#3a3a3c;--tx:#f5f5f7;--mt:#8e8e93;
+  --ac:#e8ff5a;--r:14px;
+  --st:env(safe-area-inset-top,44px);
+  --sb:env(safe-area-inset-bottom,20px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--tx);
+  font-family:-apple-system,'Helvetica Neue',sans-serif;
+  overflow:hidden;-webkit-font-smoothing:antialiased}
+#app{display:flex;flex-direction:column;height:100vh;height:100dvh}
+.hdr{
+  padding:calc(var(--st) + 8px) 20px 12px;
+  background:var(--bg);border-bottom:.5px solid var(--bdr);
+  flex-shrink:0;
+}
+.ht{font-size:22px;font-weight:700;letter-spacing:-.5px;color:var(--tx)}
+.hs{font-size:13px;color:var(--mt);margin-top:2px}
+.content{
+  flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  padding-bottom:calc(58px + var(--sb) + 16px);
+}
+.tabbar{
+  display:flex;background:var(--bg);border-top:.5px solid var(--bdr);
+  padding-bottom:var(--sb);flex-shrink:0;
+  position:fixed;bottom:0;left:0;right:0;z-index:100;
+  height:calc(58px + var(--sb));
+}
+.tab{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:3px;border:none;background:none;
+  color:var(--mt);font-size:10px;cursor:pointer;padding:8px 0 4px;
+}
+.tab.active{color:var(--ac)}
+.tab-ic{font-size:24px;line-height:1}
+.page{display:none}.page.active{display:block}
+
+/* Group grid */
+.groups{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px}
+.gcard{
+  background:var(--bg2);border:.5px solid var(--bdr);
+  border-radius:var(--r);padding:16px 12px 14px;
+  cursor:pointer;text-align:center;transition:background .1s;
+}
+.gcard:active{background:var(--bg3)}
+.gcard-svg{width:60px;height:60px;margin:0 auto 10px;display:block}
+.gcard-svg svg{width:60px;height:60px;display:block}
+.gcard-name{font-size:16px;font-weight:700;color:var(--tx)}
+.gcard-sub{font-size:11px;color:var(--mt);margin-top:3px;line-height:1.4}
+.gcard-cnt{font-size:11px;color:var(--mt);margin-top:5px}
+
+/* Back */
+.back{
+  display:flex;align-items:center;gap:4px;
+  padding:14px 20px 6px;font-size:16px;color:var(--ac);
+  background:none;border:none;cursor:pointer;
+}
+
+/* Group head */
+.gh{padding:8px 20px 16px}
+.gh-svg{width:48px;height:48px}
+.gh-svg svg{width:48px;height:48px;display:block}
+.gh-name{font-size:22px;font-weight:700;margin-top:8px;color:var(--tx)}
+.gh-sub{font-size:14px;color:var(--mt);margin-top:3px}
+
+/* Exercise list */
+.exlist{padding:0 16px 16px;display:flex;flex-direction:column;gap:10px}
+.exitem{
+  background:var(--bg2);border:.5px solid var(--bdr);
+  border-radius:var(--r);display:flex;align-items:center;
+  overflow:hidden;cursor:pointer;transition:background .1s;
+}
+.exitem:active{background:var(--bg3)}
+.ex-thumb{
+  width:80px;height:80px;flex-shrink:0;background:var(--bg3);
+  display:flex;align-items:center;justify-content:center;padding:10px;
+}
+.ex-thumb svg{width:58px;height:58px;display:block}
+.ex-info{flex:1;padding:12px 14px}
+.ex-name{font-size:15px;font-weight:600;color:var(--tx)}
+.ex-type{font-size:12px;color:var(--mt);margin-top:3px}
+.ex-arrow{color:var(--mt);font-size:20px;padding-right:14px}
+
+/* Log */
+.log-sel{
+  display:flex;align-items:center;
+  background:var(--bg2);border:.5px solid var(--bdr);
+  border-radius:var(--r);margin:0 16px 20px;overflow:hidden;
+}
+.log-thumb{
+  width:88px;height:88px;flex-shrink:0;background:var(--bg3);
+  display:flex;align-items:center;justify-content:center;padding:12px;
+}
+.log-thumb svg{width:62px;height:62px;display:block}
+.log-info{padding:14px}
+.log-name{font-size:16px;font-weight:700;color:var(--tx)}
+.log-cat{font-size:12px;color:var(--mt);margin-top:4px}
+.slbl{
+  font-size:12px;font-weight:600;color:var(--mt);
+  text-transform:uppercase;letter-spacing:.08em;
+  padding:0 20px;margin-bottom:10px;
+}
+.sets{padding:0 16px;display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.srow{
+  background:var(--bg2);border:.5px solid var(--bdr);
+  border-radius:12px;padding:12px 14px;
+  display:flex;align-items:center;gap:10px;
+}
+.snum{font-size:13px;color:var(--mt);font-weight:600;min-width:52px}
+.sinps{flex:1;display:flex;align-items:center;gap:6px}
+.sinp{
+  background:var(--bg3);border:.5px solid var(--bdr);
+  border-radius:8px;color:var(--tx);font-size:17px;font-weight:600;
+  padding:8px;text-align:center;-webkit-appearance:none;width:68px;
+}
+.sinp:focus{outline:none;border-color:var(--ac)}
+.sunit{font-size:13px;color:var(--mt)}
+.sdel{background:none;border:none;color:var(--mt);font-size:20px;cursor:pointer;padding:4px 8px}
+.add-set{
+  margin:0 16px 20px;background:none;
+  border:1px dashed var(--bdr);border-radius:var(--r);
+  padding:13px;width:calc(100% - 32px);color:var(--mt);font-size:15px;cursor:pointer;
+}
+.memo-wrap{padding:0 16px;margin-bottom:28px}
+.memo-inp{
+  width:100%;background:var(--bg2);border:.5px solid var(--bdr);
+  border-radius:var(--r);color:var(--tx);font-size:15px;
+  padding:12px 14px;font-family:inherit;resize:none;min-height:76px;
+}
+.memo-inp:focus{outline:none;border-color:var(--ac)}
+.save-btn{
+  margin:0 16px;width:calc(100% - 32px);
+  background:var(--ac);color:#111;border:none;
+  border-radius:var(--r);padding:16px;
+  font-size:16px;font-weight:700;cursor:pointer;
+}
+.save-btn:active{opacity:.85}
+
+/* History */
+.hist{padding:16px;display:flex;flex-direction:column;gap:10px}
+.hcard{
+  background:var(--bg2);border:.5px solid var(--bdr);
+  border-radius:var(--r);overflow:hidden;
+}
+.hcard-top{display:flex;align-items:stretch}
+.hthumb{
+  width:76px;flex-shrink:0;background:var(--bg3);
+  display:flex;align-items:center;justify-content:center;padding:10px;
+}
+.hthumb svg{width:54px;height:54px;display:block}
+.hbody{flex:1;padding:12px 14px}
+.hname{font-size:15px;font-weight:600;color:var(--tx)}
+.hdate{font-size:12px;color:var(--mt);margin-top:3px}
+.hdel{background:none;border:none;color:var(--mt);cursor:pointer;font-size:20px;padding:12px 14px;align-self:flex-start}
+.pills{display:flex;flex-wrap:wrap;gap:6px;padding:8px 14px 12px}
+.pill{background:var(--bg3);border-radius:20px;padding:4px 10px;font-size:12px;color:var(--mt)}
+.hmemo{font-size:13px;color:var(--mt);padding:0 14px 12px;font-style:italic;border-top:.5px solid var(--bdr);padding-top:8px}
+.empty{text-align:center;padding:72px 20px;color:var(--mt);font-size:15px;line-height:1.6}
+
+/* Stats */
+.spad{padding:16px}
+.sgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.sbox{background:var(--bg2);border:.5px solid var(--bdr);border-radius:var(--r);padding:14px 8px;text-align:center}
+.sval{font-size:24px;font-weight:700;color:var(--ac)}
+.slb2{font-size:11px;color:var(--mt);margin-top:4px}
+.clbl{font-size:12px;font-weight:600;color:var(--mt);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+.brow{margin-bottom:12px}
+.btop{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;color:var(--tx)}
+.bcnt{color:var(--mt);font-size:12px}
+.btrack{background:var(--bg3);border-radius:4px;height:8px}
+.bfill{background:var(--ac);height:8px;border-radius:4px}
+.grow{
+  display:flex;align-items:center;gap:10px;
+  background:var(--bg2);border:.5px solid var(--bdr);
+  border-radius:12px;padding:10px 14px;margin-bottom:8px;
+}
+.grow-svg{width:32px;height:32px;flex-shrink:0}
+.grow-svg svg{width:32px;height:32px;display:block}
+.grow-name{flex:1;font-size:14px;color:var(--tx)}
+.grow-cnt{font-size:14px;font-weight:700;color:var(--ac)}
+
+/* Toast */
+.toast{
+  position:fixed;top:calc(var(--st) + 60px);left:50%;
+  transform:translateX(-50%) translateY(-12px);
+  background:var(--ac);color:#111;padding:10px 22px;
+  border-radius:24px;font-size:14px;font-weight:700;
+  opacity:0;pointer-events:none;transition:all .2s;z-index:999;white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="hdr">
+    <div class="ht" id="ht">💪 筋トレログ</div>
+    <div class="hs" id="hs">今日も頑張ろう！</div>
+  </div>
+  <div class="content">
+    <div class="page active" id="pg-groups">
+      <div class="groups" id="groups-grid"></div>
+    </div>
+    <div class="page" id="pg-exlist">
+      <button class="back" onclick="goBack('pg-groups')">‹ 部位を選ぶ</button>
+      <div class="gh">
+        <div class="gh-svg" id="gh-svg"></div>
+        <div class="gh-name" id="gh-name"></div>
+        <div class="gh-sub" id="gh-sub"></div>
+      </div>
+      <div class="exlist" id="exlist"></div>
+    </div>
+    <div class="page" id="pg-log">
+      <button class="back" id="log-back">‹ 種目を選ぶ</button>
+      <div class="log-sel">
+        <div class="log-thumb" id="log-thumb"></div>
+        <div class="log-info">
+          <div class="log-name" id="log-name"></div>
+          <div class="log-cat" id="log-cat"></div>
+        </div>
+      </div>
+      <div class="slbl">セット記録</div>
+      <div class="sets" id="sets-wrap"></div>
+      <button class="add-set" onclick="addSet()">＋ セットを追加</button>
+      <div class="slbl">メモ</div>
+      <div class="memo-wrap">
+        <textarea class="memo-inp" id="memo-inp" placeholder="気づきや感想を..."></textarea>
+      </div>
+      <button class="save-btn" onclick="saveRec()">記録する</button>
+    </div>
+    <div class="page" id="pg-history">
+      <div class="hist" id="hist-list"></div>
+    </div>
+    <div class="page" id="pg-stats">
+      <div class="spad">
+        <div class="sgrid">
+          <div class="sbox"><div class="sval" id="st-total">0</div><div class="slb2">総記録</div></div>
+          <div class="sbox"><div class="sval" id="st-days">0</div><div class="slb2">日数</div></div>
+          <div class="sbox"><div class="sval" id="st-sets">0</div><div class="slb2">総セット</div></div>
+        </div>
+        <div class="clbl">よくやる種目</div>
+        <div id="st-bars"></div>
+        <div class="clbl" style="margin-top:20px">部位別セット数</div>
+        <div id="st-grps"></div>
+      </div>
+    </div>
+  </div>
+  <div class="tabbar">
+    <button class="tab active" data-pg="pg-groups" onclick="swTab(this,'pg-groups')">
+      <div class="tab-ic">🏋️</div><span>記録</span>
+    </button>
+    <button class="tab" data-pg="pg-history" onclick="swTab(this,'pg-history')">
+      <div class="tab-ic">📋</div><span>履歴</span>
+    </button>
+    <button class="tab" data-pg="pg-stats" onclick="swTab(this,'pg-stats')">
+      <div class="tab-ic">📊</div><span>統計</span>
+    </button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+
+const SVGS = {
+  "ベンチプレス": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="36" width="50" height="5" rx="1.5" fill="#555"/><rect x="3" y="41" width="5" height="11" rx="1" fill="#444"/><rect x="48" y="41" width="5" height="11" rx="1" fill="#444"/><rect x="1" y="19" width="54" height="4" rx="2" fill="#666"/><rect x="1" y="15" width="5" height="13" rx="2" fill="#555"/><rect x="50" y="15" width="5" height="13" rx="2" fill="#555"/><ellipse cx="28" cy="26" rx="7" ry="7" fill="#e8ff5a"/><polygon points="28,32 10,40 10,36 28,28 46,36 46,40" fill="#e8ff5a"/><line x1="10" y1="38" x2="4" y2="21" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="46" y1="38" x2="52" y2="21" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/></svg>`,
+  "ダンベルプレス": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="36" width="50" height="5" rx="1.5" fill="#555"/><rect x="3" y="41" width="5" height="11" rx="1" fill="#444"/><rect x="48" y="41" width="5" height="11" rx="1" fill="#444"/><ellipse cx="28" cy="26" rx="7" ry="7" fill="#e8ff5a"/><polygon points="28,32 10,40 10,36 28,28 46,36 46,40" fill="#e8ff5a"/><line x1="10" y1="38" x2="3" y2="23" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><rect x="0" y="19" width="7" height="3" rx="1" fill="#777"/><rect x="0" y="17" width="2" height="7" rx="1" fill="#555"/><rect x="5" y="17" width="2" height="7" rx="1" fill="#555"/><line x1="46" y1="38" x2="53" y2="23" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><rect x="49" y="19" width="7" height="3" rx="1" fill="#777"/><rect x="49" y="17" width="2" height="7" rx="1" fill="#555"/><rect x="54" y="17" width="2" height="7" rx="1" fill="#555"/></svg>`,
+  "ダンベルフライ": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="36" width="50" height="5" rx="1.5" fill="#555"/><rect x="3" y="41" width="5" height="11" rx="1" fill="#444"/><rect x="48" y="41" width="5" height="11" rx="1" fill="#444"/><ellipse cx="28" cy="26" rx="7" ry="7" fill="#e8ff5a"/><polygon points="28,32 10,40 10,36 28,28 46,36 46,40" fill="#e8ff5a"/><line x1="10" y1="38" x2="1" y2="30" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><rect x="0" y="27" width="5" height="3" rx="1" fill="#777"/><line x1="46" y1="38" x2="55" y2="30" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><rect x="51" y="27" width="5" height="3" rx="1" fill="#777"/><path d="M4 27 Q8 17 18 25" stroke="#e8ff5a" stroke-width="1.5" stroke-dasharray="2,2" fill="none"/><path d="M52 27 Q48 17 38 25" stroke="#e8ff5a" stroke-width="1.5" stroke-dasharray="2,2" fill="none"/></svg>`,
+  "腕立て伏せ": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="50" width="54" height="4" rx="2" fill="#444"/><ellipse cx="11" cy="27" rx="7" ry="7" fill="#e8ff5a"/><polygon points="11,33 44,40 46,50 38,50 38,44 11,39" fill="#e8ff5a"/><line x1="20" y1="37" x2="14" y2="50" stroke="#e8ff5a" stroke-width="4" stroke-linecap="round"/><line x1="36" y1="40" x2="40" y2="50" stroke="#e8ff5a" stroke-width="4" stroke-linecap="round"/><ellipse cx="46" cy="50" rx="6" ry="3" fill="#555"/><line x1="28" y1="32" x2="28" y2="20" stroke="#e8ff5a" stroke-width="2" stroke-dasharray="2,2"/><polygon points="25,23 28,18 31,23" fill="#e8ff5a"/></svg>`,
+  "インクラインプレス": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="52" width="54" height="3" rx="1" fill="#444"/><rect x="5" y="32" width="32" height="6" rx="2" fill="#555" transform="rotate(-18 21 35)"/><rect x="36" y="42" width="18" height="6" rx="2" fill="#555"/><rect x="5" y="50" width="5" height="6" rx="1" fill="#444"/><rect x="50" y="50" width="5" height="6" rx="1" fill="#444"/><rect x="5" y="14" width="46" height="4" rx="2" fill="#666"/><rect x="5" y="10" width="4" height="12" rx="2" fill="#555"/><rect x="47" y="10" width="4" height="12" rx="2" fill="#555"/><ellipse cx="18" cy="28" rx="7" ry="7" fill="#e8ff5a"/><polygon points="18,34 38,38 36,46 26,46 18,40" fill="#e8ff5a"/><line x1="16" y1="32" x2="8" y2="17" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="32" y1="36" x2="44" y2="17" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/></svg>`,
+  "チェストプレス": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="4" width="5" height="48" rx="2" fill="#444"/><rect x="50" y="4" width="5" height="48" rx="2" fill="#444"/><rect x="1" y="4" width="54" height="4" rx="2" fill="#444"/><rect x="5" y="22" width="11" height="5" rx="2" fill="#666"/><rect x="40" y="22" width="11" height="5" rx="2" fill="#666"/><rect x="20" y="36" width="16" height="9" rx="2" fill="#444"/><rect x="24" y="45" width="8" height="10" rx="1" fill="#444"/><ellipse cx="28" cy="24" rx="7" ry="7" fill="#e8ff5a"/><polygon points="28,30 22,40 34,40" fill="#e8ff5a"/><line x1="22" y1="33" x2="14" y2="25" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="34" y1="33" x2="42" y2="25" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/></svg>`,
+  "ケーブルフライ": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="5" cy="7" r="5" fill="#555"/><circle cx="51" cy="7" r="5" fill="#555"/><line x1="5" y1="12" x2="22" y2="34" stroke="#666" stroke-width="2"/><line x1="51" y1="12" x2="34" y2="34" stroke="#666" stroke-width="2"/><ellipse cx="28" cy="22" rx="7" ry="7" fill="#e8ff5a"/><polygon points="28,28 22,42 34,42" fill="#e8ff5a"/><line x1="22" y1="30" x2="14" y2="22" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="34" y1="30" x2="42" y2="22" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="26" y1="42" x2="22" y2="54" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="30" y1="42" x2="34" y2="54" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><path d="M15 22 Q18 32 22 32" stroke="#e8ff5a" stroke-width="1.5" stroke-dasharray="2,2" fill="none"/><path d="M41 22 Q38 32 34 32" stroke="#e8ff5a" stroke-width="1.5" stroke-dasharray="2,2" fill="none"/></svg>`,
+  "ディップス": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="24" width="20" height="4" rx="2" fill="#666"/><rect x="33" y="24" width="20" height="4" rx="2" fill="#666"/><rect x="4" y="24" width="4" height="32" rx="2" fill="#555"/><rect x="19" y="24" width="4" height="32" rx="2" fill="#555"/><rect x="33" y="24" width="4" height="32" rx="2" fill="#555"/><rect x="48" y="24" width="4" height="32" rx="2" fill="#555"/><ellipse cx="28" cy="11" rx="7" ry="7" fill="#e8ff5a"/><polygon points="22,25 34,25 33,17 23,17" fill="#e8ff5a"/><line x1="22" y1="25" x2="15" y2="27" stroke="#e8ff5a" stroke-width="4" stroke-linecap="round"/><line x1="34" y1="25" x2="41" y2="27" stroke="#e8ff5a" stroke-width="4" stroke-linecap="round"/><line x1="26" y1="25" x2="22" y2="42" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="22" y1="42" x2="24" y2="54" stroke="#e8ff5a" stroke-width="3" stroke-linecap="round"/><line x1="30" y1="25" x2="34" y2="42" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="34" y1="42" x2="32" y2="54" stroke="#e8ff5a" stroke-width="3" stroke-linecap="round"/></svg>`,
+  "デッドリフト": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="52" width="54" height="3" rx="1" fill="#444"/><rect x="7" y="44" width="42" height="5" rx="2" fill="#666"/><rect x="7" y="40" width="4" height="13" rx="2" fill="#555"/><rect x="45" y="40" width="4" height="13" rx="2" fill="#555"/><ellipse cx="28" cy="9" rx="7" ry="7" fill="#e8ff5a"/><polygon points="22,16 34,16 38,32 34,44 22,44 18,32" fill="#e8ff5a"/><line x1="22" y1="24" x2="12" y2="20" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="34" y1="24" x2="44" y2="20" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><polygon points="42,26 48,40 44,40" fill="#e8ff5a" opacity=".5"/></svg>`,
+  "ラットプルダウン": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="3" width="54" height="4" rx="2" fill="#444"/><line x1="28" y1="7" x2="28" y2="17" stroke="#666" stroke-width="2.5"/><rect x="9" y="17" width="38" height="4" rx="2" fill="#666"/><rect x="22" y="42" width="12" height="7" rx="2" fill="#444"/><rect x="24" y="49" width="8" height="6" rx="1" fill="#444"/><ellipse cx="28" cy="28" rx="7" ry="7" fill="#e8ff5a"/><polygon points="22,34 34,34 32,44 24,44" fill="#e8ff5a"/><line x1="22" y1="34" x2="11" y2="20" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="34" y1="34" x2="45" y2="20" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><polygon points="25,27 28,22 31,27" fill="#555"/></svg>`,
+  "懸垂": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="5" width="46" height="5" rx="2" fill="#666"/><rect x="5" y="3" width="5" height="12" rx="2" fill="#555"/><rect x="46" y="3" width="5" height="12" rx="2" fill="#555"/><ellipse cx="28" cy="18" rx="7" ry="7" fill="#e8ff5a"/><polygon points="22,24 34,24 32,36 24,36" fill="#e8ff5a"/><line x1="22" y1="24" x2="11" y2="9" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="34" y1="24" x2="45" y2="9" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="26" y1="36" x2="23" y2="52" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="30" y1="36" x2="33" y2="52" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><polygon points="25,44 28,52 31,44" fill="#e8ff5a" opacity=".4"/></svg>`,
+  "シーテッドロウ": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="46" width="54" height="4" rx="2" fill="#444"/><rect x="33" y="40" width="21" height="8" rx="2" fill="#444"/><rect x="1" y="22" width="7" height="5" rx="2" fill="#555"/><circle cx="9" cy="24" r="4" fill="#666"/><line x1="13" y1="24" x2="26" y2="30" stroke="#666" stroke-width="2"/><ellipse cx="42" cy="25" rx="7" ry="7" fill="#e8ff5a"/><polygon points="36,32 48,32 46,46 38,46" fill="#e8ff5a"/><line x1="36" y1="34" x2="25" y2="30" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="42" y1="46" x2="35" y2="54" stroke="#e8ff5a" stroke-width="3" stroke-linecap="round"/><line x1="46" y1="46" x2="30" y2="54" stroke="#e8ff5a" stroke-width="3" stroke-linecap="round"/></svg>`,
+  "ダンベルロウ": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="33" width="26" height="7" rx="2" fill="#444"/><rect x="3" y="40" width="5" height="14" rx="2" fill="#444"/><rect x="20" y="40" width="5" height="14" rx="2" fill="#444"/><ellipse cx="22" cy="20" rx="7" ry="7" fill="#e8ff5a"/><polygon points="16,26 40,30 44,42 36,42 22,32" fill="#e8ff5a"/><line x1="22" y1="26" x2="12" y2="33" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="40" y1="32" x2="48" y2="42" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><rect x="46" y="40" width="9" height="3" rx="1" fill="#777"/><rect x="46" y="38" width="2" height="7" rx="1" fill="#555"/><rect x="53" y="38" width="2" height="7" rx="1" fill="#555"/><polygon points="44,32 50,28 50,34" fill="#e8ff5a"/></svg>`,
+  "バーベルロウ": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="52" width="54" height="3" rx="1" fill="#444"/><rect x="8" y="44" width="40" height="5" rx="2" fill="#666"/><rect x="8" y="40" width="4" height="12" rx="2" fill="#555"/><rect x="44" y="40" width="4" height="12" rx="2" fill="#555"/><ellipse cx="28" cy="10" rx="7" ry="7" fill="#e8ff5a"/><polygon points="22,17 34,17 38,30 36,44 20,44 18,30" fill="#e8ff5a"/><line x1="22" y1="26" x2="12" y2="22" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="34" y1="26" x2="44" y2="22" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><polygon points="42,28 48,42 44,42" fill="#e8ff5a" opacity=".5"/></svg>`,
+  "フェイスプル": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="48" y="6" width="7" height="44" rx="2" fill="#444"/><circle cx="48" cy="22" r="5" fill="#666"/><line x1="43" y1="22" x2="32" y2="26" stroke="#666" stroke-width="2"/><line x1="32" y1="26" x2="25" y2="22" stroke="#666" stroke-width="1.5"/><line x1="32" y1="26" x2="25" y2="30" stroke="#666" stroke-width="1.5"/><ellipse cx="16" cy="18" rx="7" ry="7" fill="#e8ff5a"/><polygon points="10,24 22,24 22,38 10,38" fill="#e8ff5a"/><line x1="10" y1="29" x2="25" y2="22" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="10" y1="33" x2="25" y2="30" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="13" y1="38" x2="9" y2="54" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="19" y1="38" x2="23" y2="54" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/></svg>`,
+  "バックエクステンション": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="29" width="38" height="6" rx="2" fill="#444"/><rect x="34" y="21" width="19" height="6" rx="2" fill="#444"/><rect x="4" y="35" width="5" height="18" rx="2" fill="#444"/><rect x="27" y="35" width="5" height="18" rx="2" fill="#444"/><ellipse cx="50" cy="15" rx="7" ry="7" fill="#e8ff5a"/><polygon points="44,21 26,29 14,27 18,22 28,24 44,17" fill="#e8ff5a"/><line x1="46" y1="18" x2="40" y2="10" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="50" y1="18" x2="54" y2="10" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><path d="M36 32 Q44 22 50 18" stroke="#e8ff5a" stroke-width="1.5" stroke-dasharray="2,2" fill="none"/></svg>`,
+  "スクワット": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="52" width="54" height="3" rx="1" fill="#444"/><rect x="7" y="14" width="42" height="4" rx="2" fill="#666"/><rect x="7" y="10" width="4" height="12" rx="2" fill="#555"/><rect x="45" y="10" width="4" height="12" rx="2" fill="#555"/><ellipse cx="28" cy="8" rx="7" ry="7" fill="#e8ff5a"/><polygon points="22,14 34,14 38,22 42,52 34,52 30,36 26,36 22,52 14,52 18,22" fill="#e8ff5a"/><line x1="24" y1="20" x2="16" y2="16" stroke="#e8ff5a" stroke-width="3" stroke-linecap="round"/><line x1="32" y1="20" x2="40" y2="16" stroke="#e8ff5a" stroke-width="3" stroke-linecap="round"/><polygon points="37,34 42,46 44,34" fill="#e8ff5a" opacity=".4"/></svg>`,
+  "レッグプレス": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="2" width="54" height="4" rx="2" fill="#444"/><rect x="1" y="2" width="5" height="52" rx="2" fill="#444"/><rect x="6" y="32" width="34" height="9" rx="2" fill="#444"/><rect x="6" y="41" width="12" height="14" rx="2" fill="#444"/><rect x="4" y="9" width="8" height="20" rx="2" fill="#666"/><ellipse cx="46" cy="40" rx="7" ry="7" fill="#e8ff5a"/><polygon points="22,36 22,46 46,46 46,34" fill="#e8ff5a"/><line x1="22" y1="39" x2="12" y2="25" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="22" y1="44" x2="12" y2="34" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><polygon points="8,20 12,10 16,20" fill="#e8ff5a"/></svg>`,
+  "ルーマニアンデッドリフト": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="52" width="54" height="3" rx="1" fill="#444"/><rect x="8" y="44" width="40" height="5" rx="2" fill="#666"/><rect x="8" y="40" width="4" height="12" rx="2" fill="#555"/><rect x="44" y="40" width="4" height="12" rx="2" fill="#555"/><ellipse cx="28" cy="9" rx="7" ry="7" fill="#e8ff5a"/><polygon points="22,16 34,16 36,30 34,44 22,44 20,30" fill="#e8ff5a"/><line x1="23" y1="26" x2="14" y2="22" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="33" y1="26" x2="42" y2="22" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><path d="M40 16 Q48 20 46 34" stroke="#e8ff5a" stroke-width="1.5" stroke-dasharray="2,2" fill="none"/><polygon points="42,32 46,37 48,32" fill="#e8ff5a"/></svg>`,
+  "レッグカール": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="19" width="50" height="10" rx="2" fill="#444"/><rect x="5" y="29" width="5" height="17" rx="2" fill="#444"/><rect x="46" y="29" width="5" height="17" rx="2" fill="#444"/><rect x="47" y="11" width="8" height="5" rx="2" fill="#666"/><line x1="51" y1="16" x2="51" y2="21" stroke="#666" stroke-width="2.5"/><ellipse cx="10" cy="15" rx="7" ry="7" fill="#e8ff5a"/><polygon points="14,20 50,22 50,19 14,17" fill="#e8ff5a"/><line x1="50" y1="20" x2="54" y2="34" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="50" y1="22" x2="54" y2="10" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><path d="M54 34 Q57 22 54 10" stroke="#e8ff5a" stroke-width="1.5" stroke-dasharray="2,2" fill="none"/><polygon points="51,12 54,8 57,12" fill="#e8ff5a"/></svg>`,
+  "レッグエクステンション": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="13" y="17" width="32" height="10" rx="2" fill="#444"/><rect x="21" y="27" width="18" height="28" rx="2" fill="#444"/><rect x="11" y="4" width="7" height="22" rx="2" fill="#555"/><rect x="46" y="38" width="9" height="5" rx="2" fill="#666"/><ellipse cx="28" cy="11" rx="7" ry="7" fill="#e8ff5a"/><polygon points="23,17 33,17 32,28 24,28" fill="#e8ff5a"/><line x1="25" y1="28" x2="17" y2="42" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="17" y1="42" x2="15" y2="54" stroke="#e8ff5a" stroke-width="3" stroke-linecap="round"/><line x1="31" y1="28" x2="31" y2="40" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="31" y1="40" x2="47" y2="40" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><path d="M31 54 Q40 48 48 41" stroke="#e8ff5a" stroke-width="1.5" stroke-dasharray="2,2" fill="none"/><polygon points="45,39 48,41 45,44" fill="#e8ff5a"/></svg>`,
+  "ランジ": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="52" width="54" height="3" rx="1" fill="#444"/><ellipse cx="18" cy="8" rx="7" ry="7" fill="#e8ff5a"/><polygon points="12,14 24,14 22,26 18,26 14,26 12,26" fill="#e8ff5a"/><line x1="12" y1="22" x2="6" y2="30" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="24" y1="22" x2="30" y2="30" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="14" y1="26" x2="8" y2="44" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="8" y1="44" x2="6" y2="52" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="22" y1="26" x2="36" y2="38" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="36" y1="38" x2="40" y2="52" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><circle cx="36" cy="38" r="3" stroke="#e8ff5a" stroke-width="2" fill="none"/></svg>`,
+  "カーフレイズ": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="7" y="44" width="42" height="7" rx="2" fill="#444"/><rect x="7" y="51" width="42" height="5" rx="1" fill="#555"/><ellipse cx="28" cy="8" rx="7" ry="7" fill="#e8ff5a"/><polygon points="22,14 34,14 32,34 24,34" fill="#e8ff5a"/><line x1="24" y1="34" x2="20" y2="44" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="32" y1="34" x2="36" y2="44" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><ellipse cx="20" cy="44" rx="4" ry="2.5" fill="#e8ff5a"/><ellipse cx="36" cy="44" rx="4" ry="2.5" fill="#e8ff5a"/><polygon points="11,44 14,36 17,44" fill="#e8ff5a"/><polygon points="39,44 42,36 45,44" fill="#e8ff5a"/></svg>`,
+  "ゴブレットスクワット": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="52" width="54" height="3" rx="1" fill="#444"/><ellipse cx="28" cy="8" rx="7" ry="7" fill="#e8ff5a"/><polygon points="22,14 34,14 38,22 42,52 34,52 30,36 26,36 22,52 14,52 18,22" fill="#e8ff5a"/><rect x="22" y="22" width="12" height="5" rx="2" fill="#666"/><rect x="22" y="20" width="3" height="9" rx="1" fill="#555"/><rect x="31" y="20" width="3" height="9" rx="1" fill="#555"/><line x1="22" y1="25" x2="16" y2="22" stroke="#e8ff5a" stroke-width="2.5" stroke-linecap="round"/><line x1="34" y1="25" x2="40" y2="22" stroke="#e8ff5a" stroke-width="2.5" stroke-linecap="round"/></svg>`,
+  "ショルダープレス": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="52" width="54" height="3" rx="1" fill="#444"/><rect x="7" y="14" width="42" height="4" rx="2" fill="#666"/><rect x="5" y="10" width="4" height="12" rx="2" fill="#555"/><rect x="47" y="10" width="4" height="12" rx="2" fill="#555"/><ellipse cx="28" cy="26" rx="7" ry="7" fill="#e8ff5a"/><polygon points="22,32 34,32 32,46 24,46" fill="#e8ff5a"/><line x1="22" y1="33" x2="11" y2="17" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="34" y1="33" x2="45" y2="17" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="25" y1="46" x2="22" y2="54" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="31" y1="46" x2="34" y2="54" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><polygon points="25,21 28,15 31,21" fill="#e8ff5a"/></svg>`,
+  "ダンベルショルダープレス": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="21" y="38" width="14" height="7" rx="2" fill="#444"/><rect x="24" y="45" width="8" height="9" rx="1" fill="#444"/><ellipse cx="28" cy="17" rx="7" ry="7" fill="#e8ff5a"/><polygon points="22,23 34,23 32,37 24,37" fill="#e8ff5a"/><line x1="22" y1="27" x2="10" y2="14" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><rect x="3" y="10" width="10" height="3" rx="1" fill="#777"/><rect x="3" y="8" width="2" height="7" rx="1" fill="#555"/><rect x="11" y="8" width="2" height="7" rx="1" fill="#555"/><line x1="34" y1="27" x2="46" y2="14" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><rect x="43" y="10" width="10" height="3" rx="1" fill="#777"/><rect x="43" y="8" width="2" height="7" rx="1" fill="#555"/><rect x="51" y="8" width="2" height="7" rx="1" fill="#555"/><line x1="25" y1="37" x2="23" y2="45" stroke="#e8ff5a" stroke-width="3" stroke-linecap="round"/><line x1="31" y1="37" x2="33" y2="45" stroke="#e8ff5a" stroke-width="3" stroke-linecap="round"/></svg>`,
+  "サイドレイズ": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="52" width="54" height="3" rx="1" fill="#444"/><ellipse cx="28" cy="9" rx="7" ry="7" fill="#e8ff5a"/><polygon points="22,15 34,15 32,30 24,30" fill="#e8ff5a"/><line x1="22" y1="22" x2="2" y2="22" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="34" y1="22" x2="54" y2="22" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><rect x="0" y="20" width="5" height="4" rx="2" fill="#777"/><rect x="51" y="20" width="5" height="4" rx="2" fill="#777"/><line x1="25" y1="30" x2="22" y2="52" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="31" y1="30" x2="34" y2="52" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><path d="M5 36 Q2 22 5 12" stroke="#e8ff5a" stroke-width="1.5" stroke-dasharray="2,2" fill="none"/><polygon points="3,14 5,10 7,14" fill="#e8ff5a"/><path d="M51 36 Q54 22 51 12" stroke="#e8ff5a" stroke-width="1.5" stroke-dasharray="2,2" fill="none"/><polygon points="49,14 51,10 53,14" fill="#e8ff5a"/></svg>`,
+  "フロントレイズ": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="52" width="54" height="3" rx="1" fill="#444"/><ellipse cx="24" cy="9" rx="7" ry="7" fill="#e8ff5a"/><polygon points="18,15 30,15 28,30 20,30" fill="#e8ff5a"/><line x1="29" y1="21" x2="48" y2="14" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><rect x="46" y="11" width="9" height="3" rx="1" fill="#777"/><rect x="46" y="9" width="2" height="7" rx="1" fill="#555"/><line x1="19" y1="22" x2="12" y2="32" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><rect x="8" y="30" width="8" height="3" rx="1" fill="#777"/><line x1="22" y1="30" x2="19" y2="52" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="27" y1="30" x2="30" y2="52" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><path d="M34 28 Q42 22 46 15" stroke="#e8ff5a" stroke-width="1.5" stroke-dasharray="2,2" fill="none"/><polygon points="44,13 47,14 45,17" fill="#e8ff5a"/></svg>`,
+  "リアデルトフライ": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="28" cy="9" rx="7" ry="7" fill="#e8ff5a"/><polygon points="22,16 34,16 36,30 20,30" fill="#e8ff5a"/><line x1="28" y1="30" x2="22" y2="52" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="28" y1="30" x2="34" y2="52" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="28" y1="23" x2="4" y2="17" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="28" y1="23" x2="52" y2="17" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><rect x="0" y="15" width="7" height="4" rx="2" fill="#777"/><rect x="49" y="15" width="7" height="4" rx="2" fill="#777"/><path d="M6 30 Q2 22 5 16" stroke="#e8ff5a" stroke-width="1.5" stroke-dasharray="2,2" fill="none"/><polygon points="3,18 5,14 7,18" fill="#e8ff5a"/><path d="M50 30 Q54 22 51 16" stroke="#e8ff5a" stroke-width="1.5" stroke-dasharray="2,2" fill="none"/><polygon points="49,18 51,14 53,18" fill="#e8ff5a"/></svg>`,
+  "アップライトロウ": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="52" width="54" height="3" rx="1" fill="#444"/><rect x="10" y="22" width="36" height="4" rx="2" fill="#666"/><rect x="10" y="18" width="4" height="12" rx="2" fill="#555"/><rect x="42" y="18" width="4" height="12" rx="2" fill="#555"/><ellipse cx="28" cy="10" rx="7" ry="7" fill="#e8ff5a"/><polygon points="22,16 34,16 32,30 24,30" fill="#e8ff5a"/><line x1="22" y1="21" x2="14" y2="17" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="14" y1="17" x2="16" y2="24" stroke="#e8ff5a" stroke-width="3" stroke-linecap="round"/><line x1="34" y1="21" x2="42" y2="17" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="42" y1="17" x2="40" y2="24" stroke="#e8ff5a" stroke-width="3" stroke-linecap="round"/><line x1="25" y1="30" x2="22" y2="52" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="31" y1="30" x2="34" y2="52" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><polygon points="25,20 28,14 31,20" fill="#e8ff5a"/></svg>`,
+  "マシンショルダープレス": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="4" width="5" height="52" rx="2" fill="#444"/><rect x="50" y="4" width="5" height="52" rx="2" fill="#444"/><rect x="1" y="4" width="54" height="4" rx="2" fill="#444"/><rect x="5" y="21" width="11" height="5" rx="2" fill="#666"/><rect x="40" y="21" width="11" height="5" rx="2" fill="#666"/><rect x="21" y="38" width="14" height="7" rx="2" fill="#444"/><rect x="24" y="45" width="8" height="10" rx="1" fill="#444"/><ellipse cx="28" cy="23" rx="7" ry="7" fill="#e8ff5a"/><polygon points="22,29 34,29 32,37 24,37" fill="#e8ff5a"/><line x1="22" y1="31" x2="14" y2="24" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="34" y1="31" x2="42" y2="24" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="25" y1="37" x2="23" y2="45" stroke="#e8ff5a" stroke-width="3" stroke-linecap="round"/><line x1="31" y1="37" x2="33" y2="45" stroke="#e8ff5a" stroke-width="3" stroke-linecap="round"/><polygon points="25,20 28,14 31,20" fill="#e8ff5a"/></svg>`,
+  "バーベルカール": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="52" width="54" height="3" rx="1" fill="#444"/><ellipse cx="28" cy="8" rx="7" ry="7" fill="#e8ff5a"/><polygon points="22,14 34,14 32,28 24,28" fill="#e8ff5a"/><line x1="22" y1="21" x2="9" y2="21" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="9" y1="21" x2="9" y2="35" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="34" y1="21" x2="47" y2="21" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="47" y1="21" x2="47" y2="35" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><rect x="7" y="33" width="42" height="5" rx="2" fill="#666"/><rect x="7" y="29" width="4" height="12" rx="2" fill="#555"/><rect x="45" y="29" width="4" height="12" rx="2" fill="#555"/><line x1="25" y1="28" x2="22" y2="52" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="31" y1="28" x2="34" y2="52" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><path d="M11 40 Q8 30 9 21" stroke="#e8ff5a" stroke-width="1.5" stroke-dasharray="2,2" fill="none"/><polygon points="7,24 9,20 11,24" fill="#e8ff5a"/></svg>`,
+  "ダンベルカール": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="52" width="54" height="3" rx="1" fill="#444"/><ellipse cx="28" cy="8" rx="7" ry="7" fill="#e8ff5a"/><polygon points="22,14 34,14 32,28 24,28" fill="#e8ff5a"/><line x1="34" y1="21" x2="45" y2="21" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="45" y1="21" x2="45" y2="30" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><rect x="42" y="28" width="9" height="3" rx="1" fill="#777"/><rect x="42" y="26" width="2" height="7" rx="1" fill="#555"/><rect x="49" y="26" width="2" height="7" rx="1" fill="#555"/><line x1="22" y1="21" x2="11" y2="21" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="11" y1="21" x2="11" y2="38" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><rect x="8" y="36" width="9" height="3" rx="1" fill="#777"/><rect x="8" y="34" width="2" height="7" rx="1" fill="#555"/><rect x="15" y="34" width="2" height="7" rx="1" fill="#555"/><line x1="25" y1="28" x2="22" y2="52" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="31" y1="28" x2="34" y2="52" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><path d="M47 36 Q50 28 47 21" stroke="#e8ff5a" stroke-width="1.5" stroke-dasharray="2,2" fill="none"/><polygon points="45,23 47,20 49,23" fill="#e8ff5a"/></svg>`,
+  "ハンマーカール": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="52" width="54" height="3" rx="1" fill="#444"/><ellipse cx="28" cy="8" rx="7" ry="7" fill="#e8ff5a"/><polygon points="22,14 34,14 32,28 24,28" fill="#e8ff5a"/><line x1="34" y1="21" x2="45" y2="21" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="45" y1="21" x2="45" y2="30" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><rect x="43" y="26" width="4" height="12" rx="2" fill="#666"/><rect x="41" y="25" width="8" height="3" rx="1" fill="#555"/><rect x="41" y="37" width="8" height="3" rx="1" fill="#555"/><line x1="22" y1="21" x2="11" y2="21" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="11" y1="21" x2="11" y2="38" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><rect x="9" y="34" width="4" height="12" rx="2" fill="#666"/><rect x="7" y="33" width="8" height="3" rx="1" fill="#555"/><rect x="7" y="45" width="8" height="3" rx="1" fill="#555"/><line x1="25" y1="28" x2="22" y2="52" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="31" y1="28" x2="34" y2="52" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/></svg>`,
+  "トライセプスプッシュダウン": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="2" width="54" height="4" rx="2" fill="#444"/><line x1="28" y1="6" x2="28" y2="17" stroke="#666" stroke-width="2.5"/><rect x="18" y="17" width="20" height="4" rx="2" fill="#666"/><ellipse cx="28" cy="25" rx="7" ry="7" fill="#e8ff5a"/><polygon points="22,31 34,31 32,46 24,46" fill="#e8ff5a"/><line x1="22" y1="33" x2="21" y2="20" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="21" y1="20" x2="23" y2="31" stroke="#e8ff5a" stroke-width="3" stroke-linecap="round"/><line x1="34" y1="33" x2="35" y2="20" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="35" y1="20" x2="33" y2="31" stroke="#e8ff5a" stroke-width="3" stroke-linecap="round"/><line x1="25" y1="46" x2="22" y2="54" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="31" y1="46" x2="34" y2="54" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><polygon points="25,22 28,18 31,22" fill="#555"/></svg>`,
+  "スカルクラッシャー": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="40" width="50" height="5" rx="1.5" fill="#555"/><rect x="3" y="45" width="5" height="10" rx="1" fill="#444"/><rect x="48" y="45" width="5" height="10" rx="1" fill="#444"/><ellipse cx="12" cy="34" rx="7" ry="7" fill="#e8ff5a"/><polygon points="14,40 44,40 42,34 16,34" fill="#e8ff5a"/><line x1="16" y1="36" x2="13" y2="24" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="26" y1="36" x2="23" y2="24" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><rect x="9" y="18" width="20" height="5" rx="2" fill="#666"/><rect x="9" y="14" width="4" height="13" rx="2" fill="#555"/><rect x="25" y="14" width="4" height="13" rx="2" fill="#555"/><path d="M11 23 Q17 14 27 23" stroke="#e8ff5a" stroke-width="1.5" stroke-dasharray="2,2" fill="none"/><polygon points="24,20 27,24 24,27" fill="#e8ff5a"/></svg>`,
+  "ダイヤモンド腕立て": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="50" width="54" height="4" rx="2" fill="#444"/><ellipse cx="10" cy="27" rx="7" ry="7" fill="#e8ff5a"/><polygon points="10,33 44,40 46,50 38,50 38,44 10,39" fill="#e8ff5a"/><line x1="42" y1="44" x2="48" y2="50" stroke="#e8ff5a" stroke-width="4" stroke-linecap="round"/><line x1="22" y1="37" x2="28" y2="50" stroke="#e8ff5a" stroke-width="4" stroke-linecap="round"/><line x1="32" y1="39" x2="28" y2="50" stroke="#e8ff5a" stroke-width="4" stroke-linecap="round"/><polygon points="28,48 23,52 28,56 33,52" fill="none" stroke="#e8ff5a" stroke-width="2"/><line x1="28" y1="34" x2="28" y2="22" stroke="#e8ff5a" stroke-width="2" stroke-dasharray="2,2"/><polygon points="25,25 28,20 31,25" fill="#e8ff5a"/></svg>`,
+  "コンセントレーションカール": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="12" y="37" width="30" height="6" rx="2" fill="#444"/><rect x="14" y="43" width="5" height="12" rx="2" fill="#444"/><rect x="37" y="43" width="5" height="12" rx="2" fill="#444"/><ellipse cx="34" cy="17" rx="7" ry="7" fill="#e8ff5a"/><polygon points="28,23 40,23 38,36 30,36" fill="#e8ff5a"/><line x1="30" y1="33" x2="44" y2="40" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="44" y1="40" x2="42" y2="28" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><rect x="39" y="25" width="9" height="3" rx="1" fill="#777"/><rect x="39" y="23" width="2" height="7" rx="1" fill="#555"/><rect x="46" y="23" width="2" height="7" rx="1" fill="#555"/><line x1="26" y1="36" x2="19" y2="54" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="32" y1="37" x2="40" y2="52" stroke="#e8ff5a" stroke-width="3" stroke-linecap="round"/><path d="M47 42 Q51 34 46 27" stroke="#e8ff5a" stroke-width="1.5" stroke-dasharray="2,2" fill="none"/><polygon points="44,28 46,25 48,29" fill="#e8ff5a"/></svg>`,
+  "クランチ": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="50" width="54" height="4" rx="2" fill="#444"/><polygon points="14,50 40,46 50,37 50,42 40,50 14,54" fill="#e8ff5a"/><polygon points="14,50 18,35 25,29 31,29 26,35 18,46" fill="#e8ff5a"/><ellipse cx="22" cy="27" rx="7" ry="7" fill="#e8ff5a"/><line x1="18" y1="34" x2="8" y2="30" stroke="#e8ff5a" stroke-width="2.5" stroke-linecap="round"/><line x1="26" y1="30" x2="36" y2="26" stroke="#e8ff5a" stroke-width="2.5" stroke-linecap="round"/><path d="M16 50 Q12 40 18 32" stroke="#e8ff5a" stroke-width="1.5" stroke-dasharray="2,2" fill="none"/><polygon points="15,35 18,30 21,35" fill="#e8ff5a"/></svg>`,
+  "プランク": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="50" width="54" height="4" rx="2" fill="#444"/><ellipse cx="10" cy="27" rx="7" ry="7" fill="#e8ff5a"/><polygon points="10,33 48,38 50,50 42,50 42,44 10,39" fill="#e8ff5a"/><line x1="12" y1="36" x2="6" y2="50" stroke="#e8ff5a" stroke-width="4" stroke-linecap="round"/><rect x="2" y="48" width="9" height="3" rx="1" fill="#555"/><ellipse cx="48" cy="50" rx="6" ry="3" fill="#555"/><circle cx="46" cy="12" r="6" stroke="#e8ff5a" stroke-width="2" fill="none"/><line x1="46" y1="7" x2="46" y2="12" stroke="#e8ff5a" stroke-width="2" stroke-linecap="round"/><line x1="46" y1="12" x2="50" y2="14" stroke="#e8ff5a" stroke-width="2" stroke-linecap="round"/></svg>`,
+  "レッグレイズ": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="47" width="54" height="5" rx="2" fill="#444"/><ellipse cx="7" cy="38" rx="7" ry="7" fill="#e8ff5a"/><polygon points="4,44 30,50 32,54 24,54 24,47 4,50" fill="#e8ff5a"/><line x1="30" y1="44" x2="36" y2="50" stroke="#e8ff5a" stroke-width="2.5" stroke-linecap="round"/><polygon points="30,44 50,24 54,28 50,30 36,44" fill="#e8ff5a"/><path d="M48 46 Q54 28 48 12" stroke="#e8ff5a" stroke-width="1.5" stroke-dasharray="2,2" fill="none"/><polygon points="45,14 48,10 51,14" fill="#e8ff5a"/></svg>`,
+  "ロシアンツイスト": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="54" width="54" height="3" rx="1" fill="#444"/><ellipse cx="28" cy="50" rx="8" ry="4" fill="#555"/><polygon points="20,50 16,36 28,24 18,26 16,32" fill="#e8ff5a"/><polygon points="36,50 40,36 28,24 38,26 40,32" fill="#e8ff5a"/><ellipse cx="20" cy="23" rx="7" ry="7" fill="#e8ff5a"/><polygon points="20,29 28,26 26,34 14,34" fill="#e8ff5a"/><line x1="22" y1="32" x2="5" y2="28" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><rect x="1" y="26" width="8" height="3" rx="1" fill="#777"/><path d="M6 29 Q18 22 36 29" stroke="#e8ff5a" stroke-width="1.5" stroke-dasharray="2,2" fill="none"/><polygon points="33,27 36,30 33,33" fill="#e8ff5a"/></svg>`,
+  "アブホイール": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="54" width="54" height="3" rx="1" fill="#444"/><circle cx="18" cy="50" r="7" stroke="#666" stroke-width="2.5" fill="none"/><line x1="4" y1="48" x2="32" y2="48" stroke="#666" stroke-width="2.5"/><ellipse cx="46" cy="14" rx="7" ry="7" fill="#e8ff5a"/><polygon points="40,20 28,40 26,50 36,50 36,44 40,26" fill="#e8ff5a"/><ellipse cx="42" cy="50" rx="6" ry="4" fill="#555"/><line x1="42" y1="44" x2="42" y2="50" stroke="#e8ff5a" stroke-width="3" stroke-linecap="round"/><line x1="50" y1="30" x2="36" y2="46" stroke="#e8ff5a" stroke-width="1.5" stroke-dasharray="2,2"/><polygon points="34,44 36,47 39,45" fill="#e8ff5a"/></svg>`,
+  "バイシクルクランチ": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="51" width="54" height="4" rx="2" fill="#444"/><ellipse cx="28" cy="47" rx="10" ry="4" fill="#555"/><polygon points="36,47 48,33 52,51 44,51 42,44 36,43" fill="#e8ff5a"/><polygon points="20,47 8,43 4,51 12,51 14,44 20,43" fill="#e8ff5a"/><polygon points="28,44 36,26 40,30 34,44" fill="#e8ff5a"/><ellipse cx="38" cy="24" rx="7" ry="7" fill="#e8ff5a"/><line x1="34" y1="30" x2="18" y2="26" stroke="#e8ff5a" stroke-width="3" stroke-linecap="round"/><path d="M18 28 Q34 18 50 34" stroke="#e8ff5a" stroke-width="1.5" stroke-dasharray="2,2" fill="none"/></svg>`,
+  "ケーブルクランチ": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="2" width="54" height="4" rx="2" fill="#444"/><circle cx="28" cy="11" r="5" fill="#666"/><line x1="28" y1="16" x2="28" y2="25" stroke="#666" stroke-width="2.5"/><line x1="24" y1="25" x2="19" y2="29" stroke="#666" stroke-width="2"/><line x1="32" y1="25" x2="37" y2="29" stroke="#666" stroke-width="2"/><ellipse cx="28" cy="27" rx="7" ry="7" fill="#e8ff5a"/><polygon points="22,33 34,33 32,50 24,50" fill="#e8ff5a"/><line x1="22" y1="35" x2="19" y2="29" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="34" y1="35" x2="37" y2="29" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="26" y1="50" x2="20" y2="56" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><line x1="30" y1="50" x2="36" y2="56" stroke="#e8ff5a" stroke-width="3.5" stroke-linecap="round"/><polygon points="25,33 28,28 31,33" fill="#555"/></svg>`,
+
+  "group_chest": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="28" cy="16" rx="6" ry="6" fill="#e8ff5a"/><path d="M12 24 Q12 16 28 22 Q44 16 44 24 L42 40 Q36 36 28 38 Q20 36 14 40 Z" fill="#e8ff5a" opacity="0.85"/><line x1="28" y1="26" x2="28" y2="38" stroke="#1a1a1a" stroke-width="1.5"/><path d="M18 30 Q28 34 38 30" stroke="#1a1a1a" stroke-width="1" fill="none" opacity="0.5"/><line x1="12" y1="24" x2="6" y2="34" stroke="#e8ff5a" stroke-width="2.5" stroke-linecap="round"/><line x1="44" y1="24" x2="50" y2="34" stroke="#e8ff5a" stroke-width="2.5" stroke-linecap="round"/><line x1="25" y1="40" x2="22" y2="54" stroke="#e8ff5a" stroke-width="2.5" stroke-linecap="round"/><line x1="31" y1="40" x2="34" y2="54" stroke="#e8ff5a" stroke-width="2.5" stroke-linecap="round"/></svg>`,
+  "group_back": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="28" cy="9" rx="6" ry="6" fill="#e8ff5a"/><path d="M12 15 Q20 21 28 19 Q36 21 44 15 L42 38 Q36 42 28 40 Q20 42 14 38 Z" fill="#e8ff5a" opacity="0.85"/><line x1="28" y1="19" x2="28" y2="40" stroke="#1a1a1a" stroke-width="1.5"/><path d="M16 26 Q28 30 40 26" stroke="#1a1a1a" stroke-width="1" fill="none" opacity="0.4"/><path d="M16 32 Q28 36 40 32" stroke="#1a1a1a" stroke-width="1" fill="none" opacity="0.4"/><line x1="12" y1="15" x2="6" y2="27" stroke="#e8ff5a" stroke-width="2.5" stroke-linecap="round"/><line x1="44" y1="15" x2="50" y2="27" stroke="#e8ff5a" stroke-width="2.5" stroke-linecap="round"/><line x1="25" y1="40" x2="22" y2="54" stroke="#e8ff5a" stroke-width="2.5" stroke-linecap="round"/><line x1="31" y1="40" x2="34" y2="54" stroke="#e8ff5a" stroke-width="2.5" stroke-linecap="round"/></svg>`,
+  "group_legs": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="28" cy="7" rx="6" ry="6" fill="#e8ff5a"/><rect x="23" y="12" width="10" height="12" rx="2" fill="#e8ff5a" opacity="0.5"/><rect x="17" y="23" width="10" height="18" rx="4" fill="#e8ff5a"/><rect x="29" y="23" width="10" height="18" rx="4" fill="#e8ff5a"/><rect x="17" y="39" width="10" height="16" rx="4" fill="#e8ff5a" opacity="0.75"/><rect x="29" y="39" width="10" height="16" rx="4" fill="#e8ff5a" opacity="0.75"/><line x1="23" y1="13" x2="15" y2="23" stroke="#e8ff5a" stroke-width="2.5" stroke-linecap="round"/><line x1="33" y1="13" x2="41" y2="23" stroke="#e8ff5a" stroke-width="2.5" stroke-linecap="round"/></svg>`,
+  "group_shoulder": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="28" cy="9" rx="6" ry="6" fill="#e8ff5a"/><ellipse cx="10" cy="22" rx="9" ry="7" fill="#e8ff5a"/><ellipse cx="46" cy="22" rx="9" ry="7" fill="#e8ff5a"/><rect x="22" y="13" width="12" height="13" rx="2" fill="#e8ff5a" opacity="0.4"/><line x1="20" y1="16" x2="10" y2="22" stroke="#e8ff5a" stroke-width="2.5"/><line x1="36" y1="16" x2="46" y2="22" stroke="#e8ff5a" stroke-width="2.5"/><rect x="24" y="26" width="8" height="18" rx="2" fill="#e8ff5a" opacity="0.4"/><line x1="25" y1="44" x2="22" y2="54" stroke="#e8ff5a" stroke-width="2.5" stroke-linecap="round"/><line x1="31" y1="44" x2="34" y2="54" stroke="#e8ff5a" stroke-width="2.5" stroke-linecap="round"/></svg>`,
+  "group_arms": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="28" cy="7" rx="6" ry="6" fill="#e8ff5a"/><rect x="23" y="12" width="10" height="10" rx="2" fill="#e8ff5a" opacity="0.4"/><ellipse cx="10" cy="27" rx="7" ry="10" fill="#e8ff5a"/><ellipse cx="46" cy="29" rx="7" ry="10" fill="#e8ff5a" opacity="0.75"/><line x1="23" y1="17" x2="13" y2="22" stroke="#e8ff5a" stroke-width="3" stroke-linecap="round"/><line x1="33" y1="17" x2="43" y2="22" stroke="#e8ff5a" stroke-width="3" stroke-linecap="round"/><line x1="13" y1="33" x2="16" y2="46" stroke="#e8ff5a" stroke-width="2.5" stroke-linecap="round"/><line x1="43" y1="35" x2="40" y2="48" stroke="#e8ff5a" stroke-width="2.5" stroke-linecap="round"/><line x1="25" y1="22" x2="22" y2="54" stroke="#e8ff5a" stroke-width="2.5" stroke-linecap="round"/><line x1="31" y1="22" x2="34" y2="54" stroke="#e8ff5a" stroke-width="2.5" stroke-linecap="round"/></svg>`,
+  "group_core": `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="28" cy="7" rx="6" ry="6" fill="#e8ff5a"/><rect x="23" y="12" width="10" height="7" rx="2" fill="#e8ff5a" opacity="0.3"/><rect x="23" y="19" width="10" height="24" rx="2" fill="#e8ff5a" opacity="0.15"/><rect x="24" y="20" width="4" height="5" rx="1" fill="#e8ff5a"/><rect x="29" y="20" width="4" height="5" rx="1" fill="#e8ff5a"/><rect x="24" y="27" width="4" height="5" rx="1" fill="#e8ff5a"/><rect x="29" y="27" width="4" height="5" rx="1" fill="#e8ff5a"/><rect x="24" y="34" width="4" height="5" rx="1" fill="#e8ff5a"/><rect x="29" y="34" width="4" height="5" rx="1" fill="#e8ff5a"/><line x1="22" y1="16" x2="14" y2="26" stroke="#e8ff5a" stroke-width="2.5" stroke-linecap="round"/><line x1="34" y1="16" x2="42" y2="26" stroke="#e8ff5a" stroke-width="2.5" stroke-linecap="round"/><line x1="25" y1="43" x2="22" y2="54" stroke="#e8ff5a" stroke-width="2.5" stroke-linecap="round"/><line x1="31" y1="43" x2="34" y2="54" stroke="#e8ff5a" stroke-width="2.5" stroke-linecap="round"/></svg>`,
+};
+
+const GROUPS = [
+  {id:'chest',   name:'胸',   sub:'大胸筋・小胸筋'},
+  {id:'back',    name:'背中', sub:'広背筋・僧帽筋'},
+  {id:'legs',    name:'脚',   sub:'大腿四頭筋・ハム・臀筋'},
+  {id:'shoulder',name:'肩',   sub:'三角筋・回旋腱板'},
+  {id:'arms',    name:'腕',   sub:'上腕二頭筋・三頭筋'},
+  {id:'core',    name:'腹',   sub:'腹直筋・腹斜筋・体幹'},
+];
+const EXERCISES = {
+  chest:[
+    {name:'ベンチプレス',type:'バーベル',w:true},
+    {name:'ダンベルプレス',type:'ダンベル',w:true},
+    {name:'ダンベルフライ',type:'ダンベル',w:true},
+    {name:'腕立て伏せ',type:'自重',w:false},
+    {name:'インクラインプレス',type:'バーベル',w:true},
+    {name:'チェストプレス',type:'マシン',w:true},
+    {name:'ケーブルフライ',type:'マシン',w:true},
+    {name:'ディップス',type:'自重',w:false},
+  ],
+  back:[
+    {name:'デッドリフト',type:'バーベル',w:true},
+    {name:'ラットプルダウン',type:'マシン',w:true},
+    {name:'懸垂',type:'自重',w:false},
+    {name:'シーテッドロウ',type:'マシン',w:true},
+    {name:'ダンベルロウ',type:'ダンベル',w:true},
+    {name:'バーベルロウ',type:'バーベル',w:true},
+    {name:'フェイスプル',type:'マシン',w:true},
+    {name:'バックエクステンション',type:'自重',w:false},
+  ],
+  legs:[
+    {name:'スクワット',type:'バーベル',w:true},
+    {name:'レッグプレス',type:'マシン',w:true},
+    {name:'ルーマニアンデッドリフト',type:'バーベル',w:true},
+    {name:'レッグカール',type:'マシン',w:true},
+    {name:'レッグエクステンション',type:'マシン',w:true},
+    {name:'ランジ',type:'自重',w:false},
+    {name:'カーフレイズ',type:'自重',w:false},
+    {name:'ゴブレットスクワット',type:'ダンベル',w:true},
+  ],
+  shoulder:[
+    {name:'ショルダープレス',type:'バーベル',w:true},
+    {name:'ダンベルショルダープレス',type:'ダンベル',w:true},
+    {name:'サイドレイズ',type:'ダンベル',w:true},
+    {name:'フロントレイズ',type:'ダンベル',w:true},
+    {name:'リアデルトフライ',type:'ダンベル',w:true},
+    {name:'アップライトロウ',type:'バーベル',w:true},
+    {name:'マシンショルダープレス',type:'マシン',w:true},
+  ],
+  arms:[
+    {name:'バーベルカール',type:'バーベル',w:true},
+    {name:'ダンベルカール',type:'ダンベル',w:true},
+    {name:'ハンマーカール',type:'ダンベル',w:true},
+    {name:'トライセプスプッシュダウン',type:'マシン',w:true},
+    {name:'スカルクラッシャー',type:'バーベル',w:true},
+    {name:'ダイヤモンド腕立て',type:'自重',w:false},
+    {name:'コンセントレーションカール',type:'ダンベル',w:true},
+  ],
+  core:[
+    {name:'クランチ',type:'自重',w:false},
+    {name:'プランク',type:'自重',w:false},
+    {name:'レッグレイズ',type:'自重',w:false},
+    {name:'ロシアンツイスト',type:'ダンベル',w:true},
+    {name:'アブホイール',type:'自重',w:false},
+    {name:'バイシクルクランチ',type:'自重',w:false},
+    {name:'ケーブルクランチ',type:'マシン',w:true},
+  ],
+};
+
+let records=[],selGrp=null,selEx=null,sets=[];
+
+function svg(name){return SVGS[name]||'<svg viewBox="0 0 56 56" fill="none"><circle cx="28" cy="28" r="20" fill="#3a3a3c"/></svg>';}
+
+function loadRecs(){
+  try{const s=localStorage.getItem('wlog_v4');if(s)records=JSON.parse(s);}catch(e){records=[];}
+}
+function saveRecs(){try{localStorage.setItem('wlog_v4',JSON.stringify(records));}catch(e){}}
+
+function renderGroups(){
+  document.getElementById('groups-grid').innerHTML=GROUPS.map(g=>{
+    const cnt=records.filter(r=>r.gid===g.id).length;
+    return `<div class="gcard" onclick="selGroup('${g.id}')">
+      <div class="gcard-svg">${svg('group_'+g.id)}</div>
+      <div class="gcard-name">${g.name}</div>
+      <div class="gcard-sub">${g.sub}</div>
+      <div class="gcard-cnt">${cnt>0?cnt+'回記録済み':'種目を選ぶ ›'}</div>
+    </div>`;
+  }).join('');
+}
+
+function selGroup(id){
+  selGrp=GROUPS.find(g=>g.id===id);
+  const exs=EXERCISES[id];
+  document.getElementById('gh-svg').innerHTML=svg('group_'+id);
+  document.getElementById('gh-name').textContent=selGrp.name;
+  document.getElementById('gh-sub').textContent=selGrp.sub;
+  document.getElementById('exlist').innerHTML=exs.map(e=>`
+    <div class="exitem" onclick="selExFn('${e.name}','${e.type}',${e.w})">
+      <div class="ex-thumb">${svg(e.name)}</div>
+      <div class="ex-info">
+        <div class="ex-name">${e.name}</div>
+        <div class="ex-type">${e.type}</div>
+      </div>
+      <div class="ex-arrow">›</div>
+    </div>`).join('');
+  showPage('pg-exlist');
+  setHdr(selGrp.name,selGrp.sub);
+}
+
+function selExFn(name,type,needsW){
+  selEx={name,type,needsW};
+  sets=[{w:'',r:''}];
+  document.getElementById('log-thumb').innerHTML=svg(name);
+  document.getElementById('log-name').textContent=name;
+  document.getElementById('log-cat').textContent=selGrp.name+' · '+type;
+  document.getElementById('memo-inp').value='';
+  renderSets();
+  showPage('pg-log');
+  setHdr(name,type);
+}
+document.getElementById('log-back').onclick=()=>{showPage('pg-exlist');setHdr(selGrp.name,selGrp.sub);};
+
+function addSet(){sets.push({w:'',r:''});renderSets();}
+function rmSet(i){if(sets.length>1){sets.splice(i,1);renderSets();}}
+function renderSets(){
+  document.getElementById('sets-wrap').innerHTML=sets.map((s,i)=>`
+    <div class="srow">
+      <span class="snum">セット ${i+1}</span>
+      <div class="sinps">
+        ${selEx.needsW?`<input class="sinp" type="number" inputmode="decimal" placeholder="0" value="${s.w}" onchange="sets[${i}].w=this.value" style="width:68px"><span class="sunit">kg</span>`:''}
+        <input class="sinp" type="number" inputmode="numeric" placeholder="0" value="${s.r}" onchange="sets[${i}].r=this.value" style="width:62px">
+        <span class="sunit">回</span>
+      </div>
+      <button class="sdel" onclick="rmSet(${i})">✕</button>
+    </div>`).join('');
+}
+
+function saveRec(){
+  const vs=sets.filter(s=>s.r!==''&&s.r!=='0');
+  if(!vs.length){showToast('回数を入力してください');return;}
+  const now=new Date();
+  records.unshift({
+    id:Date.now(),gid:selGrp.id,gname:selGrp.name,
+    name:selEx.name,type:selEx.type,needsW:selEx.needsW,
+    sets:vs,memo:document.getElementById('memo-inp').value,
+    date:now.toLocaleDateString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit',weekday:'short'}),
+    ts:now.getTime()
+  });
+  saveRecs();renderGroups();renderHist();renderStats();
+  showToast('✓ 記録しました！');
+  sets=[{w:'',r:''}];
+  showPage('pg-groups');setHdr('💪 筋トレログ','今日も頑張ろう！');
+  swTabById('pg-groups');
+}
+
+function renderHist(){
+  const el=document.getElementById('hist-list');
+  if(!records.length){
+    el.innerHTML='<div class="empty">まだ記録がありません<br>最初のトレーニングを記録しよう！</div>';
+    return;
+  }
+  el.innerHTML=records.map(r=>`
+    <div class="hcard">
+      <div class="hcard-top">
+        <div class="hthumb">${svg(r.name)}</div>
+        <div class="hbody">
+          <div class="hname">${r.name}</div>
+          <div class="hdate">${r.gname} · ${r.date}</div>
+        </div>
+        <button class="hdel" onclick="delRec(${r.id})">🗑</button>
+      </div>
+      <div class="pills">
+        ${r.sets.map((s,i)=>`<span class="pill">S${i+1}: ${r.needsW&&s.w?s.w+'kg×':''}${s.r}回</span>`).join('')}
+      </div>
+      ${r.memo?`<div class="hmemo">${r.memo}</div>`:''}
+    </div>`).join('');
+}
+
+function delRec(id){
+  records=records.filter(r=>r.id!==id);
+  saveRecs();renderHist();renderStats();renderGroups();
+}
+
+function renderStats(){
+  document.getElementById('st-total').textContent=records.length;
+  document.getElementById('st-days').textContent=new Set(records.map(r=>r.date)).size;
+  document.getElementById('st-sets').textContent=records.reduce((a,r)=>a+r.sets.length,0);
+  const ec={};records.forEach(r=>{ec[r.name]=(ec[r.name]||0)+1;});
+  const t5=Object.entries(ec).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const mx=t5[0]?.[1]||1;
+  document.getElementById('st-bars').innerHTML=t5.length
+    ?t5.map(([n,c])=>`<div class="brow"><div class="btop"><span>${n}</span><span class="bcnt">${c}回</span></div><div class="btrack"><div class="bfill" style="width:${Math.round(c/mx*100)}%"></div></div></div>`).join('')
+    :'<div style="color:var(--mt);font-size:14px;padding:8px 0">データがまだありません</div>';
+  const gc={};records.forEach(r=>{gc[r.gid]=(gc[r.gid]||0)+r.sets.length;});
+  document.getElementById('st-grps').innerHTML=GROUPS.filter(g=>gc[g.id]).sort((a,b)=>(gc[b.id]||0)-(gc[a.id]||0))
+    .map(g=>`<div class="grow"><div class="grow-svg">${svg('group_'+g.id)}</div><span class="grow-name">${g.name}</span><span class="grow-cnt">${gc[g.id]}セット</span></div>`).join('')
+    ||'<div style="color:var(--mt);font-size:14px;padding:8px 0">データがまだありません</div>';
+}
+
+function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function setHdr(t,s){document.getElementById('ht').textContent=t;document.getElementById('hs').textContent=s;}
+function swTab(btn,pg){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');
+  showPage(pg);
+  if(pg==='pg-groups')setHdr('💪 筋トレログ','今日も頑張ろう！');
+  if(pg==='pg-history')setHdr('📋 履歴','過去の記録');
+  if(pg==='pg-stats')setHdr('📊 統計','トレーニング分析');
+}
+function swTabById(pg){const b=document.querySelector(`[data-pg="${pg}"]`);if(b)swTab(b,pg);}
+function goBack(pg){showPage(pg);if(pg==='pg-groups')setHdr('💪 筋トレログ','今日も頑張ろう！');}
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
+loadRecs();renderGroups();renderHist();renderStats();
+
+</script>
+</body>
+</html>
